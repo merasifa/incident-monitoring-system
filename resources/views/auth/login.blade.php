@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white py-12 px-4">
+    <div class="flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white py-12 px-4">
         <div class="w-full max-w-md">
             <div class="mb-6 text-center">
                 <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-3">
@@ -19,7 +19,7 @@
                 <!-- Session Status -->
                 <x-auth-session-status class="mb-4" :status="session('status')" />
 
-                <h2 class="text-2xl font-semibold text-slate-800 mb-4">Sign in to your account</h2>
+                <h2 class="text-2xl font-semibold text-slate-800 mb-4 text-center">Login to your account</h2>
 
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
@@ -59,3 +59,11 @@
         </div>
     </div>
 </x-guest-layout>
+
+@push('scripts')
+<script>
+    // Disable page scroll for the login page
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+</script>
+@endpush
