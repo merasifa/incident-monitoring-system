@@ -22,7 +22,7 @@ jobs:
           cache: "npm"
 
       - name: Setup PHP with extensions
-        uses: shivammathur/setup-php@v3
+        uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
           extensions: mbstring, intl, xml, bcmath, pdo_sqlite, sqlite3, pdo
