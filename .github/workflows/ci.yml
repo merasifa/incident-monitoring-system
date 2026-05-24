@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    env:
+      COMPOSER_ALLOW_SUPERUSER: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.12.0"
+          cache: "npm"
+
+      - name: Setup PHP with extensions
+        uses: shivammathur/setup-php@v3
+        with:
+          php-version: "8.2"
+          extensions: mbstring, intl, xml, bcmath, pdo_sqlite, sqlite3, pdo
+          ini-values: post_max_size=256M, memory_limit=2G
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Install composer dependencies
+        run: composer install --no-progress --prefer-dist --no-interaction
+
+      - name: Copy env and set testing DB
+        run: |
+          cp .env.example .env
+          php -r "file_exists('.env.testing') || copy('.env', '.env.testing');"
+
+      - name: Prepare application key
+        run: php artisan key:generate --ansi
+
+      - name: Configure test environment (in-memory sqlite)
+        run: |
+          php -r "file_put_contents('.env.testing', preg_replace('/^DB_CONNECTION=.*/m', 'DB_CONNECTION=sqlite', file_get_contents('.env.testing')));
+          file_put_contents('.env.testing', preg_replace('/^DB_DATABASE=.*/m', 'DB_DATABASE=:memory:', file_get_contents('.env.testing')));
+        shell: bash
+
+      - name: Run migrations (testing)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          APP_ENV: testing
+        run: php artisan migrate --force
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          APP_ENV: testing
+        run: php artisan test --no-interaction --no-ansi
+
+      - name: Install node deps
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Upload coverage artifact (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: public/build
